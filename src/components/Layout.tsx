@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import { Music, Search, User } from "lucide-react";
+import { Music, Search, User, Users } from "lucide-react";
 
 export function Layout() {
   return (
@@ -26,10 +26,10 @@ export function Layout() {
                   EXPLORAR
                 </Link>
                 <Link
-                  to="/profile"
+                  to="/friends"
                   className="text-sm font-medium text-gray-300 hover:text-white"
                 >
-                  DIARIO
+                  AMIGOS
                 </Link>
               </div>
             </div>
@@ -39,6 +39,12 @@ export function Layout() {
                 className="p-2 text-gray-400 hover:text-white md:hidden"
               >
                 <Search className="w-5 h-5" />
+              </Link>
+              <Link
+                to="/friends"
+                className="p-2 text-gray-400 hover:text-white"
+              >
+                <Users className="w-5 h-5" />
               </Link>
               <div className="relative group">
                 <Link to="/profile" className="flex items-center space-x-2">
