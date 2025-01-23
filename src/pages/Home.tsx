@@ -1,8 +1,13 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Star, Heart } from "lucide-react";
+import { useAuth } from "../lib/auth";
+import { getFriends, toggleLike, checkIfLiked } from "../lib/api";
 
 export function Home() {
-  // Fake data
-  const recentActivity = [
+  const { user } = useAuth();
+  const [friends, setFriends] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([
     {
       id: 1,
       user: "María García",
@@ -12,6 +17,7 @@ export function Home() {
       type: "album",
       image:
         "https://images.unsplash.com/photo-1629276301820-0f3eedc29fd0?auto=format&fit=crop&q=80&w=200",
+      liked: false,
     },
     {
       id: 2,
@@ -21,8 +27,62 @@ export function Home() {
       type: "track",
       image:
         "https://images.unsplash.com/photo-1611339555312-e607c8352fd7?auto=format&fit=crop&q=80&w=200",
+      liked: false,
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    if (user) {
+      loadFriends();
+      checkLikedStatus();
+    }
+  }, [user, checkLikedStatus]);
+
+  async function loadFriends() {
+    try {
+      const friendsData = await getFriends();
+      setFriends(friendsData);
+    } catch (error) {
+      console.error("Error loading friends:", error);
+    }
+  }
+
+  async function checkLikedStatus() {
+    const updatedActivity = await Promise.all(
+      recentActivity.map(async (activity) => ({
+        ...activity,
+        liked: await checkIfLiked(activity.id.toString(), activity.type),
+      }))
+    );
+    setRecentActivity(updatedActivity);
+  }
+
+  async function handleLike(activityId: number) {
+    if (!user) return;
+
+    try {
+      const isNowLiked = await toggleLike(activityId.toString(), "album");
+      setRecentActivity((prev) =>
+        prev.map((activity) =>
+          activity.id === activityId
+            ? { ...activity, liked: isNowLiked }
+            : activity
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-400">
+          Inicia sesión para ver la actividad de tus amigos
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -44,13 +104,19 @@ export function Home() {
                 />
                 <div className="flex-1">
                   <p className="text-sm text-gray-300">
-                    <span className="font-medium text-emerald-500">
+                    <Link
+                      to={`/profile/${activity.user}`}
+                      className="font-medium text-emerald-500 hover:text-emerald-400"
+                    >
                       {activity.user}
-                    </span>{" "}
+                    </Link>{" "}
                     {activity.action}{" "}
-                    <span className="font-medium text-white">
+                    <Link
+                      to={`/album/${activity.id}`}
+                      className="font-medium text-white hover:text-emerald-400"
+                    >
                       {activity.item}
-                    </span>
+                    </Link>
                   </p>
                   {activity.rating && (
                     <div className="flex items-center mt-1">
@@ -63,8 +129,19 @@ export function Home() {
                     </div>
                   )}
                 </div>
-                <button className="p-2 text-gray-500 hover:text-emerald-500 transition-colors">
-                  <Heart className="w-5 h-5" />
+                <button
+                  onClick={() => handleLike(activity.id)}
+                  className={`p-2 transition-colors ${
+                    activity.liked
+                      ? "text-emerald-500 hover:text-emerald-600"
+                      : "text-gray-500 hover:text-emerald-500"
+                  }`}
+                >
+                  <Heart
+                    className={`w-5 h-5 ${
+                      activity.liked ? "fill-current" : ""
+                    }`}
+                  />
                 </button>
               </div>
             </div>

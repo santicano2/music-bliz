@@ -1,8 +1,14 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Star, Heart, MessageCircle, Share2, Clock } from "lucide-react";
+import { useAuth } from "../lib/auth";
+import { toggleLike, checkIfLiked, getLikes } from "../lib/api";
 
 export function Album() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   // Datos de ejemplo
   const album = {
@@ -21,6 +27,37 @@ export function Album() {
     rating: 4.5,
     reviews: 1234,
   };
+
+  useEffect(() => {
+    if (id && user) {
+      loadLikeStatus();
+      loadLikes();
+    }
+  }, [id, user]);
+
+  async function loadLikeStatus() {
+    if (!id) return;
+    const isLiked = await checkIfLiked(id, "album");
+    setLiked(isLiked);
+  }
+
+  async function loadLikes() {
+    if (!id) return;
+    const likes = await getLikes(id, "album");
+    setLikesCount(likes.length);
+  }
+
+  async function handleLike() {
+    if (!id || !user) return;
+
+    try {
+      const isNowLiked = await toggleLike(id, "album");
+      setLiked(isNowLiked);
+      setLikesCount((prev) => (isNowLiked ? prev + 1 : prev - 1));
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -53,8 +90,15 @@ export function Album() {
               <Star className="w-4 h-4" />
               <span>Rate</span>
             </button>
-            <button className="p-2 text-gray-400 hover:text-emerald-500 border border-gray-800 rounded-md">
-              <Heart className="w-4 h-4" />
+            <button
+              onClick={handleLike}
+              className={`p-2 transition-colors border border-gray-800 rounded-md ${
+                liked
+                  ? "text-emerald-500"
+                  : "text-gray-400 hover:text-emerald-500"
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
             </button>
             <button className="p-2 text-gray-400 hover:text-emerald-500 border border-gray-800 rounded-md">
               <MessageCircle className="w-4 h-4" />
@@ -62,6 +106,9 @@ export function Album() {
             <button className="p-2 text-gray-400 hover:text-emerald-500 border border-gray-800 rounded-md">
               <Share2 className="w-4 h-4" />
             </button>
+          </div>
+          <div className="mt-2 text-center text-sm text-gray-500">
+            {likesCount} {likesCount === 1 ? "like" : "likes"}
           </div>
         </div>
 
