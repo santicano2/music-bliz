@@ -1,7 +1,19 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Music, Search, User, Users } from "lucide-react";
+import { useAuth } from "../lib/auth";
 
 export function Layout() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    if (!user) {
+      navigate("/login");
+    } else {
+      navigate("/profile");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black">
       <nav className="border-b border-gray-800">
@@ -41,17 +53,20 @@ export function Layout() {
                 <Search className="w-5 h-5" />
               </Link>
               <Link
-                to="/friends"
+                to={user ? "/friends" : "/login"}
                 className="p-2 text-gray-400 hover:text-white"
               >
                 <Users className="w-5 h-5" />
               </Link>
               <div className="relative group">
-                <Link to="/profile" className="flex items-center space-x-2">
+                <button
+                  onClick={handleProfileClick}
+                  className="flex items-center space-x-2"
+                >
                   <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:text-white">
                     <User className="w-5 h-5" />
                   </div>
-                </Link>
+                </button>
               </div>
             </div>
           </div>
